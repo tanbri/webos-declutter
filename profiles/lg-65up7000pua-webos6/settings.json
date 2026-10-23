@@ -1,0 +1,69 @@
+{
+  "model": "LG 65UP7000PUA (2021, webOS 6, US)",
+  "source": "Key names from bscpylgtv's dump of a 2021 webOS 6 set (docs/available_settings_C1.md). Run `tv.py probe` to see which ones this TV reports.",
+  "settings": {
+    "general": {
+      "homePromotion": {
+        "value": "off",
+        "why": "Promoted content and ad banner on the home screen (Settings > General > Home Settings > Home Promotion)."
+      },
+      "homeAutoLaunch": {
+        "value": "off",
+        "why": "Home screen with its ad rows opening by itself at power-on."
+      },
+      "customizedAd": {
+        "value": "off",
+        "why": "Ads personalised from viewing data."
+      },
+      "adCookie": {
+        "value": "off",
+        "why": "Advertising identifier cookie used to track the TV across apps."
+      },
+      "lmt": {
+        "value": "on",
+        "why": "Limit Ad Tracking: asks apps and LG not to use the ad ID for targeting."
+      },
+      "doNotSellMyPersonalInformation": {
+        "value": "on",
+        "why": "US opt-out of LG selling or sharing viewing data."
+      },
+      "screenSaverAd": {
+        "value": "off",
+        "why": "Ads shown in the screen saver."
+      },
+      "aiNudge": {
+        "value": "off",
+        "why": "Pop-up suggestions (\"nudges\") over what you are watching."
+      },
+      "welcomeFeature": {
+        "value": "off",
+        "optional": true,
+        "why": "Welcome/tips cards on the home screen. Harmless; turn off with --optional."
+      }
+    },
+    "option": {
+      "livePlus": {
+        "value": "off",
+        "why": "Live Plus: automatic content recognition (ACR) that fingerprints what is on screen, including HDMI inputs."
+      },
+      "livePromotion": {
+        "value": "off",
+        "why": "Promotions overlaid on live TV."
+      },
+      "promotionStreamer": {
+        "value": "off",
+        "why": "Promotional streams/banners in the home and live TV."
+      },
+      "enableToastPopup": {
+        "value": "off",
+        "optional": true,
+        "why": "Toast notifications for tips and offers. Also hides some useful ones; turn off with --optional."
+      },
+      "quickStartMode": {
+        "value": "off",
+        "optional": true,
+        "why": "Quick Start+ keeps the TV half-awake on standby (network active). Off saves power but slows power-on by a few seconds."
+      }
+    }
+  }
+}

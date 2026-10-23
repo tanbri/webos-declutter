@@ -1,0 +1,38 @@
+# cleanyourlgtv: LG webOS ad, tracking and ACR domains (default list)
+# One domain per line, Pi-hole / AdGuard Home / NextDNS "denylist" format.
+# Derived from Perflyst/PiHoleBlocklist SmartTV.txt (MIT), trimmed to entries
+# that don't break the LG Content Store, app updates or firmware updates.
+# Riskier extras are in lg-ads-aggressive.txt.
+
+# Ads
+ad.lgappstv.com
+ibis.lgappstv.com
+us.ibs.lgappstv.com
+lgsmartad.com
+us.lgsmartad.com
+us.ad.lgsmartad.com
+us.info.lgsmartad.com
+lgad.cjpowercast.com.edgesuite.net
+smartclip.net
+yumenetworks.com
+
+# Home screen promotions and recommendations
+us.homeprv.lgtvcommon.com
+us.recommend.lgtvcommon.com
+us.nudge.lgtvcommon.com
+
+# Telemetry / beacons
+us.cdpbeacon.lgtvcommon.com
+us.cdpsvc.lgtvcommon.com
+us.rdl.lgtvcommon.com
+aic.cdpsvc.lgtvcommon.com
+aic.cdpbeacon.lgtvcommon.com
+aic.rdl.lgtvcommon.com
+us.rdx2.lgtvsdp.com
+smartshare.lgtvsdp.com
+
+# ACR (Live Plus / viewing information)
+aic-ngfts.lge.com
+aic-gfts.nextlgsdp.com
+ngfts.nextlgsdp.com
+alphonso.tv

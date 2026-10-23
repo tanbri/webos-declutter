@@ -1,0 +1,10 @@
+# cleanyourlgtv: extra LG domains. Add these only after the default list works.
+# Each has been reported to break something; the note says what to check.
+
+# Breaks thumbnails in the LG Content Store.
+ngfts.lge.com
+# LG's service platform. Blocking can break the home screen, Content Store and app sign-in.
+us.lgtvsdp.com
+us.nextlgsdp.com
+# General LG service endpoint; some apps and the weather widget use it.
+us.service.lgtvcommon.com
