@@ -8,5 +8,5 @@ This repo changes settings on a real TV in someone's home. Treat every write as 
 - Never write to `eulaStatus`/`eulaInfo`, factory-reset, change network settings or trigger a reboot over the API. Users change agreements on the TV themselves.
 - Writes aren't confirmed by the TV. Trust the read-back, not the call returning.
 - `locked` (`?`) means the TV refuses to read the key. webOS gives the same answer for keys that don't exist, so locked keys are written blind and the user checks them in the TV menus. `missing` means the category doesn't have the key. Don't guess other key names; use `get` to explore, and ask before writing.
-- Never block `snu.lge.com` or all of `lgtvsdp.com` in DNS lists. They deliver firmware updates.
+- Never block `snu.lge.com` or all of `lgtvsdp.com` in DNS lists. They deliver firmware updates. For Samsung, never block `samsungotn.net` (firmware), `multiscreen.samsung.com` or `samsungrm.net` (casting and remote).
 - Python 3.9 compatible, standard library plus `bscpylgtv` only. Run `tools/venv/bin/python -m pytest` after changing `tools/tv.py`.

@@ -6,8 +6,12 @@ Turning settings off stops most ads. Blocking LG's ad and tracking domains at th
 | --- | --- |
 | [`lg-ads.txt`](lg-ads.txt) | Default. Ads, home promotions, telemetry and ACR. Safe for the Content Store, apps and firmware updates. |
 | [`lg-ads-aggressive.txt`](lg-ads-aggressive.txt) | Extras that can break parts of webOS. Add one at a time and test. |
+| [`samsung-ads.txt`](samsung-ads.txt) | Samsung Tizen default: ACR, ads and promotional notices. |
+| [`samsung-ads-aggressive.txt`](samsung-ads-aggressive.txt) | Samsung extras that can break Smart Hub or sign-in. Add one at a time and test. |
 
-Never block `snu.lge.com` or `lgtvsdp.com` as a whole. They deliver firmware and app updates.
+Never block:
+- **LG:** `snu.lge.com`, or `lgtvsdp.com` as a whole. They deliver firmware and app updates.
+- **Samsung:** `samsungotn.net` (firmware downloads), `multiscreen.samsung.com` and `samsungrm.net` (casting and phone remote).
 
 ## Pick a resolver
 

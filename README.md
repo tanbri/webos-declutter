@@ -66,6 +66,10 @@ After a firmware update, run `check --fix` to reapply anything the update reset.
 
 About Quick Start+ (`--optional`): turning it off saves standby power and stops the TV keeping its network active overnight, but cold power-on takes a few seconds longer. Leave it on if fast power-on matters more to you.
 
+## Samsung TVs
+
+The tool is LG-only. Samsung TVs run Tizen, whose network API can press keys and launch apps but can't read or change settings. For a Samsung there's a manual [privacy and declutter checklist](profiles/samsung-un55tu700dfxza-tizen/checklist.md), written for the UN55TU700DFXZA (2020), and a Samsung [DNS blocklist](dns/samsung-ads.txt).
+
 ## Using it with Claude Code
 
 Paste [PROMPT.md](PROMPT.md) into Claude Code (or another coding assistant) in this folder. It walks you through everything, asking before each change.

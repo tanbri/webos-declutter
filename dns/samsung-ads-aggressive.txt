@@ -1,0 +1,11 @@
+# webos-declutter: extra Samsung domains. Add these only after the default list works.
+# Each has been reported to break something; the note says what to check.
+
+# Smart Hub service platform. Blocking can break Smart Hub content rows, app
+# sign-in and the Terms & Policies menu.
+samsungcloudsolution.com
+samsungcloudsolution.net
+# Smart Hub / app store backend. Perflyst reports numerous connection problems.
+samsungqbe.com
+# Device telemetry (*pu hosts). Can slow or break Samsung account sign-in.
+samsungelectronics.com

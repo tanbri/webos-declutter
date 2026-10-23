@@ -1,0 +1,25 @@
+# webos-declutter: Samsung Tizen ad and ACR domains (default list)
+# One domain per line, Pi-hole / AdGuard Home / NextDNS "denylist" format.
+# Derived from Perflyst/PiHoleBlocklist SmartTV.txt (MIT), trimmed to ads and
+# ACR so Smart Hub, the app store, casting and firmware updates keep working.
+# Riskier extras are in samsung-ads-aggressive.txt.
+
+# ACR (Viewing Information Services)
+samsungacr.com
+log-1.samsungacr.com
+log-2.samsungacr.com
+log-3.samsungacr.com
+log-ingestion.samsungacr.com
+log-ingestion-eu.samsungacr.com
+
+# Ads
+samsungads.com
+ads.samsungads.com
+samsungadhub.com
+ad.samsungadhub.com
+rd.samsungadhub.com
+
+# Promotional notices
+notice.samsungcloudsolution.com
+noticecdn.samsungcloudsolution.com
+noticefile.samsungcloudsolution.com
