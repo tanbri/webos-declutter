@@ -6,11 +6,11 @@
       "homePromotion": {
         "value": "off",
         "why": "Promoted content and ad banner on the home screen.",
-        "menu": "Settings > General > Home Settings > Home Promotion (confirmed working on 03.53.45)"
+        "menu": "Settings > General > System > Additional Settings > Home Settings > Home Promotion (confirmed working on 03.53.45)"
       },
       "homeAutoLaunch": {
         "value": "off",
-        "why": "Home screen with its ad rows opening by itself at power-on. This firmware has no menu entry for it; the visible equivalent is Settings > General > Home Settings > Power On Screen = Recent Input."
+        "why": "Home screen with its ad rows opening by itself at power-on. This firmware has no menu entry for it; the visible equivalent is Settings > General > System > Additional Settings > Home Settings > Power On Screen = Recent Input."
       },
       "customizedAd": {
         "value": "off",

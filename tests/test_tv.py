@@ -208,7 +208,7 @@ def test_dry_run_lists_unverified_writes(capsys):
     out = capsys.readouterr().out
     assert "Will change and verify (1)" in out
     assert "without verification" in out
-    assert "check: Settings > General > Home Settings > Home Promotion" in out
+    assert "check: Settings > General > System > Additional Settings > Home Settings > Home Promotion" in out
     assert fake.writes == []
 
 
