@@ -30,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PROFILE = ROOT / "profiles" / "lg-65up7000pua-webos6" / "settings.json"
 BACKUP_DIR = ROOT / "backups"
-CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "cleanyourlgtv"
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "webos-declutter"
 
 # User agreements live in the unnamed ("") settings category on webOS 6.
 EULA_CATEGORY = ""
@@ -129,7 +129,7 @@ def parse_value(text):
 # ---------------------------------------------------------------- TV access
 
 class JsonKeyStore:
-    """Stores the pairing key per TV in ~/.config/cleanyourlgtv/keys.json (bscpylgtv StorageProto)."""
+    """Stores the pairing key per TV in ~/.config/webos-declutter/keys.json (bscpylgtv StorageProto)."""
 
     def __init__(self, path):
         self.path = Path(path)

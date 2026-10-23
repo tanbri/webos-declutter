@@ -1,4 +1,4 @@
-# cleanyourlgtv
+# webos-declutter
 
 Make an LG webOS TV quieter and lighter from your computer, over Wi‑Fi: no screen fingerprinting, no promoted content on the home screen, no ad tracking, and fewer preinstalled apps. No root, no cable, no developer account.
 
@@ -72,7 +72,7 @@ Paste [PROMPT.md](PROMPT.md) into Claude Code (or another coding assistant) in t
 
 ## How it works
 
-`tools/tv.py` uses [bscpylgtv](https://github.com/chros73/bscpylgtv) to talk SSAP, a JSON WebSocket on port 3001. It's the same local API the LG ThinQ app uses. Reading settings is a normal API call. Writing goes through the TV's internal settings service, which doesn't return a result, so every readable write is followed by a read-back. Before every change, the tool saves the current values to `backups/`. The pairing key is stored in `~/.config/cleanyourlgtv/keys.json`.
+`tools/tv.py` uses [bscpylgtv](https://github.com/chros73/bscpylgtv) to talk SSAP, a JSON WebSocket on port 3001. It's the same local API the LG ThinQ app uses. Reading settings is a normal API call. Writing goes through the TV's internal settings service, which doesn't return a result, so every readable write is followed by a read-back. Before every change, the tool saves the current values to `backups/`. The pairing key is stored in `~/.config/webos-declutter/keys.json`.
 
 ## Tests
 

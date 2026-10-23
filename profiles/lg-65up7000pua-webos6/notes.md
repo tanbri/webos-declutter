@@ -55,4 +55,4 @@ tools/venv/bin/python -I tools/tv.py check --fix
 
 ## Remote control from this Mac
 
-For the tool to connect, the TV must be on, on the same network, and have Settings → General → Devices → External Devices → **TV On With Mobile** turned on. The first connection shows a pairing prompt on the TV. The key is saved in `~/.config/cleanyourlgtv/keys.json`.
+For the tool to connect, the TV must be on, on the same network, and have Settings → General → Devices → External Devices → **TV On With Mobile** turned on. The first connection shows a pairing prompt on the TV. The key is saved in `~/.config/webos-declutter/keys.json`.

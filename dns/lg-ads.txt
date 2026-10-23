@@ -1,4 +1,4 @@
-# cleanyourlgtv: LG webOS ad, tracking and ACR domains (default list)
+# webos-declutter: LG webOS ad, tracking and ACR domains (default list)
 # One domain per line, Pi-hole / AdGuard Home / NextDNS "denylist" format.
 # Derived from Perflyst/PiHoleBlocklist SmartTV.txt (MIT), trimmed to entries
 # that don't break the LG Content Store, app updates or firmware updates.

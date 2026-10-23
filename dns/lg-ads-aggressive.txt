@@ -1,4 +1,4 @@
-# cleanyourlgtv: extra LG domains. Add these only after the default list works.
+# webos-declutter: extra LG domains. Add these only after the default list works.
 # Each has been reported to break something; the note says what to check.
 
 # Breaks thumbnails in the LG Content Store.
