@@ -1,26 +1,34 @@
 # cleanyourlgtv
 
-Turn off the ads, tracking and promotions on an LG webOS TV from your computer, over Wi‑Fi. No root, no cable, no developer account.
+Make an LG webOS TV quieter and lighter from your computer, over Wi‑Fi: no screen fingerprinting, no promoted content on the home screen, no ad tracking, and fewer preinstalled apps. No root, no cable, no developer account.
 
-This is an LG take on [cleanyourtv](https://github.com/Gathin23/cleanyourtv), which does the same for Android/Google TV. It's built for the **LG 65UP7000PUA (2021, webOS 6)**. Other webOS 5–6 sets should mostly work; `tv.py probe` tells you which settings your TV reports.
+Built for the **LG 65UP7000PUA (2021, webOS 6)**. Other webOS 5–6 sets should mostly work; `tv.py probe` shows which settings your TV reports.
 
-## What's different from the Android version
+## What it improves
 
-webOS has no ADB, and LG doesn't allow preinstalled apps to be disabled or the home screen to be replaced without rooting the TV. So instead of disabling packages, this tool:
+| Change | Effect |
+| --- | --- |
+| **Live Plus off** | Stops automatic content recognition (ACR). With it on, the TV continuously fingerprints whatever is on screen, including HDMI inputs, and uploads it. Off, that background capture and network traffic stop. |
+| **Home Promotion, live-TV promotions, promo streams, screen-saver ads off** | The home screen and screen saver stop fetching banners, promoted tiles and preview videos from LG's servers, so there's less to download and draw each time they open. |
+| **Power On Screen: Recent Input** | The TV powers on straight to your last input instead of loading the home screen first. |
+| **Personalised ads, ad cookie off; Limit Ad Tracking and Do Not Sell on** | Apps and LG stop targeting ads using the TV's ad ID and viewing history. |
+| **Pop-up nudges off** | No suggestion overlays on top of what you're watching. |
+| **User agreements withdrawn** (by hand) | Viewing Information, Interest-Based Advertisement, Voice and Marketing. LG's servers stop receiving the data those cover. |
+| **Unused apps deleted** (by hand) | Frees storage, which is tight on entry-level models, and means fewer apps to check for updates in the background. |
+| **Optional DNS blocklist** (set on your router) | Requests to LG ad, beacon and ACR servers fail immediately, and they stay blocked even if a firmware update turns a setting back on. |
 
-1. **Backs up** every setting it's about to touch, plus your app list, to `backups/`.
-2. **Turns off** ad and tracking settings over LG's own remote-control API (the same one the ThinQ app uses): Live Plus (ACR), home promotions, personalised ads, ad cookie, screen-saver ads, live-TV promotions, pop-up nudges and home auto-launch. See [the profile](profiles/lg-65up7000pua-webos6/settings.json) for the full list and why each one is there.
-3. **Verifies** by reading every value back, where the TV allows it. On the 65UP7000PUA only Live Plus is readable. The TV refuses to read the other keys (`locked`), so those are written without verification, and `apply` tells you where to check them in the TV menus.
-4. **Reports** which user agreements (Viewing Information, Interest-Based Ads, Voice) are still accepted. You withdraw those on the TV yourself; the API won't change them.
-5. **Blocks** LG ad and ACR domains with an optional [DNS list](dns/).
+These changes remove background work and network fetches; they don't overclock anything. The gains haven't been benchmarked, and how much faster the TV feels varies. Expect the home screen to open with less clutter and less loading, and no ACR running in the background.
 
-Everything can be undone with `tv.py restore`.
+## What it doesn't do
+
+- **No app disabling or custom home screen.** webOS doesn't let anything do either without rooting the TV, and root is out of scope. You delete partner apps with the remote; LG's own apps (Live TV, LG Channels, Home Dashboard) stay.
+- **Can't confirm most writes.** LG blocks apps from reading almost every setting on this model. Only Live Plus can be read back. The tool still writes the rest and tells you where to check them in the TV menus. On the 65UP7000PUA, Home Promotion and Limit Ad Tracking are confirmed to take effect this way.
 
 ## Setup
 
 On the TV:
 - Turn on Settings → General → Devices → External Devices → **TV On With Mobile**, so the TV accepts connections from your computer.
-- Find its IP address: Settings → Network → Wi‑Fi Connection → Advanced Wi‑Fi Settings.
+- Find its IP address in your router's device list, where it usually shows as `lgwebostv`. From a Mac on the same network you can also run `arp -a | grep -i lgwebostv` once the TV is on.
 
 On your Mac (Python 3.9+):
 
@@ -31,26 +39,32 @@ export TV_HOST=192.168.1.50   # your TV's IP
 
 ## Use
 
+Run these from the repo folder:
+
 ```bash
 tools/venv/bin/python -I tools/tv.py probe            # first run: accept the pairing prompt on the TV
 tools/venv/bin/python -I tools/tv.py apply --dry-run  # see what would change
-tools/venv/bin/python -I tools/tv.py apply            # back up, apply, verify
+tools/venv/bin/python -I tools/tv.py apply            # back up, apply, verify what can be read
 tools/venv/bin/python -I tools/tv.py privacy          # what's still on, incl. user agreements
 ```
 
+Then do the [manual steps](profiles/lg-65up7000pua-webos6/notes.md): withdraw user agreements, check Home Settings, and delete unused apps from the home bar.
+
+After a firmware update, run `check --fix` to reapply anything the update reset.
+
 | Command | What it does |
 | --- | --- |
-| `probe` | Pair, then show model, firmware, and each profile setting's current value |
-| `apply [--dry-run] [--optional]` | Back up, then change everything that differs from the profile. `--optional` also turns off tips, toasts and Quick Start+ |
-| `check [--fix]` | After a firmware update: show settings that drifted back; `--fix` reapplies them |
+| `probe` | Pair, then show model, firmware, and each profile setting's current value (`locked` = the TV won't let it be read) |
+| `apply [--dry-run] [--optional]` | Back up, then write the profile. `--optional` also turns off tips, toasts and Quick Start+ |
+| `check [--fix]` | Show settings that drifted back; `--fix` reapplies them |
 | `privacy` | `check`, plus which ad/tracking user agreements are still accepted |
 | `backup` | Save the current values without changing anything |
-| `restore backups/<file>.json` | Put a backup's values back |
+| `restore backups/<file>.json` | Put a backup's readable values back, and list the locked ones to switch back by hand |
 | `apps` | List the apps on the home bar |
 | `get <category> <key>...` / `set <category> key=value...` | Read or write any setting |
 | `call ssap://<uri> [json]` | Send a raw request to the TV's API |
 
-Then go through the [manual steps](profiles/lg-65up7000pua-webos6/notes.md): user agreements, deleting partner apps from the home bar, and LG Channels.
+About Quick Start+ (`--optional`): turning it off saves standby power and stops the TV keeping its network active overnight, but cold power-on takes a few seconds longer. Leave it on if fast power-on matters more to you.
 
 ## Using it with Claude Code
 
@@ -58,13 +72,7 @@ Paste [PROMPT.md](PROMPT.md) into Claude Code (or another coding assistant) in t
 
 ## How it works
 
-`tools/tv.py` uses [bscpylgtv](https://github.com/chros73/bscpylgtv) to talk SSAP (a JSON WebSocket on port 3001). Reading settings is a normal API call. Writing goes through the TV's internal settings service, the way bscpylgtv does it for picture calibration. The TV doesn't confirm writes, which is why every write is followed by a read-back. The pairing key is stored in `~/.config/cleanyourlgtv/keys.json`.
-
-## Limits
-
-- No app disabling or custom launcher without root. Root exploits exist for some older webOS firmware, but they're patched on current firmware and out of scope here.
-- LG locks most settings against reading, and the TV answers the same way for a locked key and one that doesn't exist. Writes to locked keys can't be confirmed by the tool. Check them on the TV, and `restore` can't undo them automatically (it lists them so you can switch them back by hand).
-- The DNS lists only block what's listed. Watch your resolver's query log to find more.
+`tools/tv.py` uses [bscpylgtv](https://github.com/chros73/bscpylgtv) to talk SSAP, a JSON WebSocket on port 3001. It's the same local API the LG ThinQ app uses. Reading settings is a normal API call. Writing goes through the TV's internal settings service, which doesn't return a result, so every readable write is followed by a read-back. Before every change, the tool saves the current values to `backups/`. The pairing key is stored in `~/.config/cleanyourlgtv/keys.json`.
 
 ## Tests
 

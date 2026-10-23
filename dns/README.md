@@ -27,11 +27,9 @@ Never block `snu.lge.com` or `lgtvsdp.com` as a whole. They deliver firmware and
 
 ## Point the TV at it
 
-webOS 6 has no "Private DNS" (DNS-over-TLS) option, only a plain DNS server:
+webOS 6 has no "Private DNS" (DNS-over-TLS) option. The reliable way is to **set the DNS server on your router**, so the TV (and every other device) picks it up automatically. Then restart the TV.
 
-Settings → Network → Wi‑Fi Connection (or Wired) → Advanced Wi‑Fi Settings → Edit → uncheck **Set Automatically** → DNS Server: your resolver's IP.
-
-Or set the DNS server on your router so every device uses it.
+Some webOS firmware also has a per-TV DNS field, under Settings → Network → Wi‑Fi Connection (or Wired) → Advanced Wi‑Fi Settings. On the 65UP7000PUA (firmware 03.53.45), the Wi‑Fi Connection screen only shows the on/off switch and the network list, so use the router.
 
 ## Check it works
 

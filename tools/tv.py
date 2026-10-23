@@ -504,7 +504,8 @@ async def run(args, tv):
 def main(argv=None):
     args = build_parser().parse_args(argv)
     if not args.host:
-        sys.exit("Set TV_HOST=<tv ip> or pass --host. Find the IP on the TV: Settings > Network > Wi-Fi > Advanced.")
+        sys.exit("Set TV_HOST=<tv ip> or pass --host. Find the IP in your router's device list "
+                 "(usually 'lgwebostv'), or run: arp -a | grep -i lgwebostv")
     from bscpylgtv import PyLGTVCmdException
 
     try:

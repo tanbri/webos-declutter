@@ -21,8 +21,17 @@ Keep **Terms of Use** agreed. Without it the LG Content Store, app updates and m
 
 webOS 6 doesn't let you disable preinstalled apps without root. You can:
 
-- **Remove** most partner apps: hold OK on the app in the home bar → Delete. LG's own apps (Live TV, LG Channels, Sports, Art Gallery) can't be removed.
+- **Remove** apps you don't use: hold OK on the app in the home bar → Delete. Deleted apps can be reinstalled from the Apps store.
 - **Reorder** the ones you use to the front: hold OK → Move.
+
+On this TV (`tv.py apps`), these are safe to delete:
+
+| Group | Apps |
+| --- | --- |
+| LG filler | LG Gaming Portal, LG Movies & TV, LG Radio+, LG Sports Playbook, LG Streaming Week, LG Travel+, ShopTime, Who.Where.What?, Sports Alert |
+| Preloaded games | 8 Ball Pool, Weekend Games |
+| Only if unused | FOX ONE, Fubo, Sling TV, YouTube TV, Amazon Alexa, Pluto TV, Tubi, Room to Room Share |
+| Keep | Apps (the store), Media Player, Web Browser, Home Dashboard, LG Channels. These are system apps, and most can't be deleted. |
 - **Home Settings** (Settings → General → System → Additional Settings → Home Settings) on firmware 03.53.45 has three entries:
   - **Power On Screen**: set to **Recent Input** so the TV opens on your last input instead of the home screen. (There's no "Home Auto Launch" entry on this firmware.)
   - **Home Promotion**: Off. `tv.py apply` does this; confirmed working on this TV.
@@ -34,7 +43,7 @@ LG Channels is the ad-supported free TV service. To stop it taking over Live TV,
 
 ## Ad-blocking DNS
 
-See [`dns/README.md`](../../dns/README.md). Set it on the TV under Settings → Network → (Wi‑Fi or Wired) → Advanced Settings → turn off "Set Automatically" for DNS and enter your resolver.
+See [`dns/README.md`](../../dns/README.md). The simplest way is to set the DNS server on your router. The Wi‑Fi Connection screen on this TV only shows the on/off switch and the network list, so a per-TV DNS setting may not be reachable there.
 
 ## Firmware updates
 
