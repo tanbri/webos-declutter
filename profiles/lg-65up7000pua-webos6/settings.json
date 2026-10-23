@@ -1,15 +1,16 @@
 {
   "model": "LG 65UP7000PUA (2021, webOS 6, US)",
-  "source": "Key names from bscpylgtv's dump of a 2021 webOS 6 set (docs/available_settings_C1.md). Run `tv.py probe` to see which ones this TV reports.",
+  "source": "Key names from bscpylgtv's dump of a 2021 webOS 6 set on firmware 03.53.45 (docs/available_settings_C1.md). On the 65UP7000PUA only livePlus can be read back; the rest are written unverified. Optional \"menu\" says where to check a value on the TV.",
   "settings": {
     "general": {
       "homePromotion": {
         "value": "off",
-        "why": "Promoted content and ad banner on the home screen (Settings > General > Home Settings > Home Promotion)."
+        "why": "Promoted content and ad banner on the home screen.",
+        "menu": "Settings > General > Home Settings > Home Promotion (confirmed working on 03.53.45)"
       },
       "homeAutoLaunch": {
         "value": "off",
-        "why": "Home screen with its ad rows opening by itself at power-on."
+        "why": "Home screen with its ad rows opening by itself at power-on. This firmware has no menu entry for it; the visible equivalent is Settings > General > Home Settings > Power On Screen = Recent Input."
       },
       "customizedAd": {
         "value": "off",

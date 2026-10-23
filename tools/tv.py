@@ -44,10 +44,32 @@ EULA_TRACKING = [
 ]
 
 
+
+
+class _Unreadable:
+    """Value for keys the TV refuses to read. webOS answers "not allowed" both for keys it
+    locks and for keys that don't exist, so these can be written but never verified."""
+
+    def __repr__(self):
+        return "unreadable"
+
+
+UNREADABLE = _Unreadable()
+
+
+def to_json(value):
+    return json.dumps(value, default=lambda v: "<unreadable>" if v is UNREADABLE else str(v))
+
+
+def readable(have):
+    """Drop UNREADABLE entries from a {cat: {key: value}} map."""
+    return {cat: {k: v for k, v in keys.items() if v is not UNREADABLE} for cat, keys in have.items()}
+
+
 # ---------------------------------------------------------------- profiles
 
 def load_profile(path):
-    """Return {category: {key: {"value": v, "why": str, "optional": bool}}}."""
+    """Return {category: {key: {"value": v, "why": str, "menu": str, "optional": bool}}}."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     out = {}
     for category, keys in data["settings"].items():
@@ -58,6 +80,7 @@ def load_profile(path):
             out[category][key] = {
                 "value": spec["value"],
                 "why": spec.get("why", ""),
+                "menu": spec.get("menu", ""),
                 "optional": bool(spec.get("optional", False)),
             }
     return out
@@ -72,20 +95,28 @@ def targets(profile, include_optional=False):
 
 
 def diff(want, have):
-    """Compare {cat: {key: value}} maps. Returns (changes, missing).
+    """Compare {cat: {key: value}} maps. Returns (changes, blind, missing).
 
     changes: {cat: {key: (current, wanted)}} for keys the TV reports with another value.
-    missing: [(cat, key)] for keys this TV/firmware does not report at all.
+    blind:   {cat: {key: wanted}} for keys the TV won't let us read. They can be written,
+             but nothing can confirm the current value or whether a write took.
+    missing: [(cat, key)] for keys the TV says its category doesn't have.
     """
-    changes, missing = {}, []
+    changes, blind, missing = {}, {}, []
     for cat, keys in want.items():
         current = have.get(cat, {})
         for key, value in keys.items():
             if key not in current:
                 missing.append((cat, key))
+            elif current[key] is UNREADABLE:
+                blind.setdefault(cat, {})[key] = value
             elif current[key] != value:
                 changes.setdefault(cat, {})[key] = (current[key], value)
-    return changes, missing
+    return changes, blind, missing
+
+
+def count(nested):
+    return sum(len(keys) for keys in nested.values())
 
 
 def parse_value(text):
@@ -160,21 +191,23 @@ class LGTV:
         return [{"id": a.get("id"), "title": a.get("title")} for a in points]
 
     async def get(self, category, keys):
-        """Read keys; keys the TV doesn't know are simply absent from the result."""
+        """Read keys. Keys the TV refuses to read map to UNREADABLE; keys its category
+        doesn't support are left out."""
         from bscpylgtv import PyLGTVCmdException
 
         try:
             res = await self.client.get_system_settings(category, list(keys))
             return dict(res.get("settings", {}))
         except PyLGTVCmdException:
-            # One unknown key can fail the whole request; fall back to one at a time.
+            # One refused key fails the whole request; fall back to one at a time.
             out = {}
             for key in keys:
                 try:
                     res = await self.client.get_system_settings(category, [key])
                     out.update(res.get("settings", {}))
-                except PyLGTVCmdException:
-                    pass
+                except PyLGTVCmdException as e:
+                    if "not allowed" in error_text(e):
+                        out[key] = UNREADABLE
             return out
 
     async def set(self, category, settings):
@@ -185,43 +218,74 @@ class LGTV:
         return await self.client.request(uri.replace("ssap://", "", 1), payload)
 
 
+def error_text(exc):
+    """The TV's own error message from a bscpylgtv exception."""
+    msg = getattr(exc, "message", exc)
+    if isinstance(msg, dict):
+        return msg.get("payload", {}).get("errorText") or msg.get("error") or str(msg)
+    return str(msg)
+
+
 async def read_all(tv, want):
     return {cat: await tv.get(cat, list(keys)) for cat, keys in want.items()}
 
 
 # ---------------------------------------------------------------- commands
 
-async def write_backup(tv, profile, label="backup"):
+async def write_backup(tv, profile, label="backup", blind=None):
+    """Save every readable profile value. `blind` records unreadable keys about to be
+    written, so `restore` can say which ones to switch back by hand."""
     want = targets(profile, include_optional=True)
+    have = await read_all(tv, want)
+    unreadable = sorted(f"{cat}.{k}" for cat, keys in have.items() for k, v in keys.items() if v is UNREADABLE)
     data = {
         "taken": dt.datetime.now().isoformat(timespec="seconds"),
         "host": tv.host,
-        "settings": await read_all(tv, want),
-        "eula": await tv.get(EULA_CATEGORY, [EULA_KEY]),
+        "settings": readable(have),
+        "unreadable": unreadable,
+        "unverified_writes": blind or {},
+        "eula": readable({"": await tv.get(EULA_CATEGORY, [EULA_KEY])})[""],
         "apps": await tv.apps(),
     }
     BACKUP_DIR.mkdir(exist_ok=True)
     path = BACKUP_DIR / f"{label}-{dt.datetime.now():%Y%m%d-%H%M%S}.json"
     path.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
-    print(f"Backed up {sum(len(v) for v in data['settings'].values())} settings to {path}")
+    print(f"Backed up {count(data['settings'])} readable settings to {path}"
+          + (f" ({len(unreadable)} could not be read)" if unreadable else ""))
     return path
 
 
-async def apply_changes(tv, changes):
-    """Write changes, re-read, and return {cat: {key: (now, wanted)}} for anything that didn't stick."""
-    for cat, keys in changes.items():
-        await tv.set(cat, {k: wanted for k, (_, wanted) in keys.items()})
+async def apply_changes(tv, changes, blind=None):
+    """Write changes and blind writes, re-read the changes, and return
+    {cat: {key: (now, wanted)}} for anything that didn't stick."""
+    blind = blind or {}
+    for cat in list(changes) + [c for c in blind if c not in changes]:
+        settings = {k: wanted for k, (_, wanted) in changes.get(cat, {}).items()}
+        settings.update(blind.get(cat, {}))
+        await tv.set(cat, settings)
+    if not changes:
+        return {}
     await asyncio.sleep(1)
     want = {cat: {k: wanted for k, (_, wanted) in keys.items()} for cat, keys in changes.items()}
-    failed, _ = diff(want, await read_all(tv, want))
+    failed, _, _ = diff(want, await read_all(tv, want))
     return failed
+
+
+def label(cat, key):
+    return f"{cat or chr(34) * 2}.{key}"
 
 
 def print_changes(changes, arrow="->"):
     for cat, keys in changes.items():
-        label = cat or '""'
         for key, (cur, wanted) in keys.items():
-            print(f"  {label}.{key}: {json.dumps(cur)} {arrow} {json.dumps(wanted)}")
+            print(f"  {label(cat, key)}: {to_json(cur)} {arrow} {to_json(wanted)}")
+
+
+def print_blind(blind, profile=None):
+    for cat, keys in blind.items():
+        for key, wanted in keys.items():
+            menu = ((profile or {}).get(cat, {}).get(key) or {}).get("menu")
+            print(f"  {label(cat, key)} = {to_json(wanted)}" + (f"   [check: {menu}]" if menu else ""))
 
 
 async def cmd_probe(tv, args, profile):
@@ -240,7 +304,9 @@ async def cmd_apps(tv, args, profile):
 
 
 async def cmd_get(tv, args, profile):
-    print(json.dumps(await tv.get(args.category, args.keys), indent=2, sort_keys=True))
+    values = await tv.get(args.category, args.keys)
+    print(json.dumps(values, indent=2, sort_keys=True,
+                     default=lambda v: "<unreadable: the TV blocks reading this key, or it doesn't exist>"))
 
 
 async def cmd_set(tv, args, profile):
@@ -251,9 +317,16 @@ async def cmd_set(tv, args, profile):
             sys.exit(f"expected key=value, got {pair!r}")
         settings[key] = parse_value(value)
     current = await tv.get(args.category, list(settings))
-    changes = {args.category: {k: (current.get(k), v) for k, v in settings.items()}}
-    failed = await apply_changes(tv, changes)
+    changes = {args.category: {k: (current.get(k), v) for k, v in settings.items()
+                               if current.get(k) is not UNREADABLE}}
+    blind = {args.category: {k: v for k, v in settings.items() if current.get(k) is UNREADABLE}}
+    changes = {c: k for c, k in changes.items() if k}
+    blind = {c: k for c, k in blind.items() if k}
+    failed = await apply_changes(tv, changes, blind)
     print_changes(changes)
+    if blind:
+        print("Written without verification (the TV won't let us read these back):")
+        print_blind(blind)
     if failed:
         print("Did not stick:")
         print_changes(failed, "!=")
@@ -271,31 +344,46 @@ async def cmd_backup(tv, args, profile):
 
 async def cmd_apply(tv, args, profile):
     want = targets(profile, args.optional)
-    changes, missing = diff(want, await read_all(tv, want))
+    changes, blind, missing = diff(want, await read_all(tv, want))
     for cat, key in missing:
-        print(f"  skip {cat}.{key}: not reported by this TV/firmware")
-    if not changes:
+        print(f"  skip {label(cat, key)}: this TV's {cat!r} category doesn't have it")
+    if not changes and not blind:
         print("Nothing to change: the TV already matches the profile.")
         return
-    print("Changes:")
-    print_changes(changes)
+    if changes:
+        print(f"Will change and verify ({count(changes)}):")
+        print_changes(changes)
+    if blind:
+        print(f"\nWill write without verification ({count(blind)}). The TV refuses to read these keys,\n"
+              "so their current values are unknown and the write can't be confirmed:")
+        print_blind(blind, profile)
     if args.dry_run:
+        print("\nDry run: nothing was written.")
         return
-    await write_backup(tv, profile, "before-apply")
-    failed = await apply_changes(tv, changes)
+    await write_backup(tv, profile, "before-apply", blind)
+    failed = await apply_changes(tv, changes, blind)
     if failed:
         print("These did not stick (the TV may block them; change them on the TV instead):")
         print_changes(failed, "!=")
         return 1
-    print("Done. Run `tv.py privacy` for the user agreements, which must be changed on the TV.")
+    if changes:
+        print(f"Verified {count(changes)} change(s).")
+    if blind:
+        print(f"Sent {count(blind)} unverified write(s). Check the ones marked [check: ...] on the TV.")
+    print("Run `tv.py privacy` for the user agreements, which must be changed on the TV.")
 
 
 async def cmd_restore(tv, args, profile):
     data = json.loads(Path(args.backup).read_text(encoding="utf-8"))
     want = data["settings"]
-    changes, _ = diff(want, await read_all(tv, want))
+    changes, _, _ = diff(want, await read_all(tv, want))
+    manual = data.get("unverified_writes") or {}
+    if manual:
+        print("These were written without being readable, so their old values are unknown.\n"
+              "Switch them back on the TV if you want the old behaviour:")
+        print_blind(manual)
     if not changes:
-        print("Nothing to restore: the TV already matches the backup.")
+        print("Nothing to restore: the readable settings already match the backup.")
         return
     print("Restoring:")
     print_changes(changes)
@@ -309,40 +397,56 @@ async def cmd_restore(tv, args, profile):
 async def cmd_check(tv, args, profile):
     want = targets(profile, include_optional=True)
     have = await read_all(tv, want)
-    changes, missing = diff(want, have)
+    changes, blind, missing = diff(want, have)
     print(f"\n{'setting':40} {'now':>10} {'profile':>10}")
     for cat, keys in profile.items():
         for key, spec in keys.items():
-            name = f"{cat}.{key}" + (" (optional)" if spec["optional"] else "")
-            now = json.dumps(have.get(cat, {}).get(key)) if key in have.get(cat, {}) else "n/a"
-            mark = "!" if key in changes.get(cat, {}) and not spec["optional"] else " "
-            print(f"{mark} {name:38} {now:>10} {json.dumps(spec['value']):>10}")
-    required = {
-        cat: {k: v for k, v in keys.items() if not profile[cat][k]["optional"]}
-        for cat, keys in changes.items()
-    }
-    required = {cat: keys for cat, keys in required.items() if keys}
+            name = label(cat, key) + (" (optional)" if spec["optional"] else "")
+            current = have.get(cat, {})
+            if key not in current:
+                now, mark = "missing", " "
+            elif current[key] is UNREADABLE:
+                now, mark = "locked", "?"
+            else:
+                now = to_json(current[key])
+                mark = "!" if key in changes.get(cat, {}) and not spec["optional"] else " "
+            print(f"{mark} {name:38} {now:>10} {to_json(spec['value']):>10}")
+
+    def required_only(nested):
+        out = {cat: {k: v for k, v in keys.items() if not profile[cat][k]["optional"]}
+               for cat, keys in nested.items()}
+        return {cat: keys for cat, keys in out.items() if keys}
+
+    required, required_blind = required_only(changes), required_only(blind)
+    print()
+    if blind:
+        print(f"? {count(blind)} key(s) are locked: the TV won't let apps read them (or they don't exist\n"
+              "  on this firmware; the TV gives the same answer for both). `apply` writes them\n"
+              "  without verification; check them in the TV's menus.")
     if missing:
-        print(f"\n{len(missing)} key(s) not reported by this TV (n/a).")
+        print(f"  {len(missing)} key(s) missing: the TV says their category doesn't have them.")
     if not required:
-        print("\nAll profile settings are in place.")
-        return
-    print(f"\n{sum(len(k) for k in required.values())} setting(s) differ from the profile (marked !).")
+        print("All readable profile settings are in place.")
+        if not (getattr(args, "fix", False) and required_blind):
+            return
+    else:
+        print(f"! {count(required)} setting(s) differ from the profile.")
     if getattr(args, "fix", False):
-        await write_backup(tv, profile, "before-fix")
-        failed = await apply_changes(tv, required)
+        await write_backup(tv, profile, "before-fix", required_blind)
+        failed = await apply_changes(tv, required, required_blind)
         if failed:
             print("Still differs after fixing:")
             print_changes(failed, "!=")
             return 1
-        print("Fixed.")
+        print("Fixed." + (f" Re-sent {count(required_blind)} locked setting(s) without verification."
+                          if required_blind else ""))
         return
     return 1
 
 
 async def cmd_privacy(tv, args, profile):
     await cmd_check(tv, args, profile)
-    status = (await tv.get(EULA_CATEGORY, [EULA_KEY])).get(EULA_KEY)
+    status = readable({"": await tv.get(EULA_CATEGORY, [EULA_KEY])})[""].get(EULA_KEY)
     if not isinstance(status, dict):
         print("\nUser agreements: this TV did not report them; check them on the TV.")
         return
@@ -386,7 +490,8 @@ def build_parser():
     r = sub.add_parser("restore")
     r.add_argument("backup")
     k = sub.add_parser("check")
-    k.add_argument("--fix", action="store_true", help="reapply settings that drifted")
+    k.add_argument("--fix", action="store_true",
+                   help="reapply settings that drifted, and re-send locked ones without verification")
     return p
 
 
@@ -400,8 +505,12 @@ def main(argv=None):
     args = build_parser().parse_args(argv)
     if not args.host:
         sys.exit("Set TV_HOST=<tv ip> or pass --host. Find the IP on the TV: Settings > Network > Wi-Fi > Advanced.")
+    from bscpylgtv import PyLGTVCmdException
+
     try:
         return asyncio.run(run(args, LGTV(args.host))) or 0
+    except PyLGTVCmdException as e:
+        sys.exit(f"The TV refused the request: {error_text(e)}")
     except (OSError, asyncio.TimeoutError) as e:
         sys.exit(f"Could not reach the TV at {args.host}: {str(e) or 'timed out'}\n"
                  "Is it on, on the same network, and is Settings > General > Devices > "

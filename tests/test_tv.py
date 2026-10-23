@@ -17,9 +17,10 @@ class FakeTV:
 
     host = "10.0.0.2"
 
-    def __init__(self, settings, locked=()):
+    def __init__(self, settings, locked=(), unreadable=()):
         self.settings = {cat: dict(keys) for cat, keys in settings.items()}
         self.locked = set(locked)
+        self.unreadable = set(unreadable)
         self.writes = []
 
     async def __aenter__(self):
@@ -37,7 +38,9 @@ class FakeTV:
 
     async def get(self, category, keys):
         have = self.settings.get(category, {})
-        return {k: have[k] for k in keys if k in have}
+        out = {k: have[k] for k in keys if k in have}
+        out.update({k: tv.UNREADABLE for k in keys if (category, k) in self.unreadable})
+        return out
 
     async def set(self, category, settings):
         self.writes.append((category, dict(settings)))
@@ -94,9 +97,11 @@ def test_profile_rejects_key_without_value(tmp_path):
         tv.load_profile(bad)
 
 
-def test_diff_splits_changes_and_missing():
-    changes, missing = tv.diff({"a": {"x": 1, "y": 2, "z": 3}}, {"a": {"x": 1, "y": 5}})
+def test_diff_splits_changes_blind_and_missing():
+    changes, blind, missing = tv.diff({"a": {"x": 1, "y": 2, "z": 3, "w": 4}},
+                                      {"a": {"x": 1, "y": 5, "w": tv.UNREADABLE}})
     assert changes == {"a": {"y": (5, 2)}}
+    assert blind == {"a": {"w": 4}}
     assert missing == [("a", "z")]
 
 
@@ -187,3 +192,66 @@ def test_main_requires_host(monkeypatch):
     monkeypatch.delenv("TV_HOST", raising=False)
     with pytest.raises(SystemExit):
         tv.main(["probe"])
+
+
+def locked_tv():
+    """Like the real 65UP7000PUA: only livePlus (and eulaStatus) can be read."""
+    fake = stock_tv()
+    fake.unreadable = {(cat, k) for cat, keys in fake.settings.items() for k in keys
+                       if cat != "" and k != "livePlus"}
+    return fake
+
+
+def test_dry_run_lists_unverified_writes(capsys):
+    fake = locked_tv()
+    run(tv.cmd_apply(fake, args(dry_run=True), profile()))
+    out = capsys.readouterr().out
+    assert "Will change and verify (1)" in out
+    assert "without verification" in out
+    assert "check: Settings > General > Home Settings > Home Promotion" in out
+    assert fake.writes == []
+
+
+def test_apply_writes_locked_keys_blind_and_records_them():
+    fake = locked_tv()
+    assert run(tv.cmd_apply(fake, args(), profile())) is None
+    written = {k: v for cat, s in fake.writes for k, v in s.items()}
+    assert written["livePlus"] == "off" and written["homePromotion"] == "off"
+    assert "quickStartMode" not in written  # optional
+    saved = json.loads(next(tv.BACKUP_DIR.glob("before-apply-*.json")).read_text())
+    assert saved["settings"]["option"] == {"livePlus": "on"}
+    assert "general.homePromotion" in saved["unreadable"]
+    assert saved["unverified_writes"]["general"]["homePromotion"] == "off"
+
+
+def test_restore_lists_unverified_writes_for_manual_undo(capsys):
+    fake = locked_tv()
+    run(tv.cmd_apply(fake, args(), profile()))
+    path = next(tv.BACKUP_DIR.glob("before-apply-*.json"))
+    run(tv.cmd_restore(fake, argparse.Namespace(backup=str(path)), profile()))
+    out = capsys.readouterr().out
+    assert "Switch them back on the TV" in out
+    assert fake.settings["option"]["livePlus"] == "on"
+
+
+def test_check_shows_locked_and_fix_resends_them(capsys):
+    fake = locked_tv()
+    run(tv.cmd_apply(fake, args(), profile()))
+    capsys.readouterr()
+    assert run(tv.cmd_check(fake, args(), profile())) is None
+    out = capsys.readouterr().out
+    assert "locked" in out and "n/a" not in out
+    fake.writes.clear()
+    run(tv.cmd_check(fake, args(fix=True), profile()))
+    assert any("homePromotion" in s for _, s in fake.writes)
+
+
+def test_get_prints_unreadable_marker(capsys):
+    run(tv.cmd_get(locked_tv(), argparse.Namespace(category="general", keys=["homePromotion"]), profile()))
+    assert "unreadable" in capsys.readouterr().out
+
+
+def test_error_text_extracts_tv_message():
+    e = Exception()
+    e.message = {"payload": {"errorText": "Some keys are not allowed for the request. ( x )"}}
+    assert tv.error_text(e).startswith("Some keys are not allowed")

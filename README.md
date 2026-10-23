@@ -10,7 +10,7 @@ webOS has no ADB, and LG doesn't allow preinstalled apps to be disabled or the h
 
 1. **Backs up** every setting it's about to touch, plus your app list, to `backups/`.
 2. **Turns off** ad and tracking settings over LG's own remote-control API (the same one the ThinQ app uses): Live Plus (ACR), home promotions, personalised ads, ad cookie, screen-saver ads, live-TV promotions, pop-up nudges and home auto-launch. See [the profile](profiles/lg-65up7000pua-webos6/settings.json) for the full list and why each one is there.
-3. **Verifies** by reading every value back.
+3. **Verifies** by reading every value back, where the TV allows it. On the 65UP7000PUA only Live Plus is readable. The TV refuses to read the other keys (`locked`), so those are written without verification, and `apply` tells you where to check them in the TV menus.
 4. **Reports** which user agreements (Viewing Information, Interest-Based Ads, Voice) are still accepted. You withdraw those on the TV yourself; the API won't change them.
 5. **Blocks** LG ad and ACR domains with an optional [DNS list](dns/).
 
@@ -63,7 +63,7 @@ Paste [PROMPT.md](PROMPT.md) into Claude Code (or another coding assistant) in t
 ## Limits
 
 - No app disabling or custom launcher without root. Root exploits exist for some older webOS firmware, but they're patched on current firmware and out of scope here.
-- LG can rename or remove settings keys in firmware updates. Keys the TV doesn't report are skipped, not guessed.
+- LG locks most settings against reading, and the TV answers the same way for a locked key and one that doesn't exist. Writes to locked keys can't be confirmed by the tool. Check them on the TV, and `restore` can't undo them automatically (it lists them so you can switch them back by hand).
 - The DNS lists only block what's listed. Watch your resolver's query log to find more.
 
 ## Tests

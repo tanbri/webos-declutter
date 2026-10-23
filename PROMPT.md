@@ -8,7 +8,7 @@ Work through these steps in order. Stop and ask me before anything that changes 
 
 1. **Setup.** Create the venv and install `tools/requirements.txt` if it isn't there yet. Ask me for the TV's IP address. Remind me to turn on Settings → General → Devices → External Devices → TV On With Mobile.
 2. **Probe.** Run `tools/venv/bin/python -I tools/tv.py --host <ip> probe`, and tell me to accept the pairing prompt on the TV. Show me the model, the firmware, and which profile settings the TV reports.
-3. **If my model isn't the 65UP7000PUA**, copy the profile to `profiles/<my-model>/` and drop keys the probe showed as `n/a`.
+3. **If my model isn't the 65UP7000PUA**, copy the profile to `profiles/<my-model>/` and drop keys the probe showed as `missing`. Keys shown as `locked` can't be read back; explain that `apply` writes them unverified and I'll need to check them on the TV.
 4. **Ask me** these before applying:
    - Turn off tips/toast pop-ups and Quick Start+ too (`--optional`)? Quick Start+ off saves standby power but makes power-on a few seconds slower.
    - Do I use Google Assistant or Alexa on the TV? If yes, I'll keep the Voice Information agreement.
