@@ -36,7 +36,7 @@ CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / 
 EULA_CATEGORY = ""
 EULA_KEY = "eulaStatus"
 # Agreements that feed ads, ACR or profiling. Users can withdraw them on the TV:
-# Settings > General > System > Additional Settings > User Agreements.
+# Settings > Support > Privacy & Terms > User Agreements.
 EULA_TRACKING = [
     "acrAllowed", "acrAdAllowed", "acrOnAllowed", "customAdAllowed", "customadsAllowed",
     "cookiesAllowed", "marketingOnAllowed", "thirdPartySharingAllowed",
@@ -457,7 +457,7 @@ async def cmd_privacy(tv, args, profile):
     print("\nUser agreements still accepted (ads/tracking):")
     for key in agreed:
         print(f"  {key}")
-    print("Withdraw them on the TV: Settings > General > System > Additional Settings > User Agreements.")
+    print("Withdraw them on the TV: Settings > Support > Privacy & Terms > User Agreements.")
     print("Keep the general Terms of Use agreed or the Content Store and apps stop working.")
 
 

@@ -4,13 +4,14 @@
 
 ## User agreements (most important)
 
-Settings → General → System → Additional Settings → User Agreements.
+Settings → Support → Privacy & Terms → User Agreements.
 
 Withdraw:
 
 - **Viewing Information**: LG's ACR/viewing data, including from HDMI inputs.
 - **Voice Information**: voice recordings sent to LG and partners.
 - **Interest-Based Advertisement**: targeted ads.
+- **Marketing**: promotional messages from LG. Nothing depends on it.
 
 Keep **Terms of Use** agreed. Without it the LG Content Store, app updates and most streaming apps stop working.
 
